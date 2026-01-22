@@ -127,9 +127,10 @@ function formatCode(code: string, options: TransformOptions): string {
 	let indentLevel = 0;
 	const indentSize = 2;
 
-	const formattedLines = lines.map((line) => {
+	const formattedLines = lines
+		.filter((line) => line.trim() !== '')
+		.map((line) => {
 		const trimmed = line.trim();
-		if (!trimmed) return '';
 
 		// Decrease indent for closing braces/parentheses
 		if (
@@ -183,24 +184,20 @@ function generateComponentCode(svgJsx: string, options: TransformOptions): strin
 	if (options.typescript) {
 		// TypeScript template matching the user's original template
 		return `import {SVGProps} from "react";
-
 const ${componentName} = ((props: SVGProps<SVGSVGElement>) => {
   return (
 ${svgJsx}
   )
 })
-
 export default ${componentName};`;
 	} else {
 		// JavaScript template
 		return `import * as React from "react";
-
 const ${componentName} = ((props) => {
   return (
 ${svgJsx}
   )
 })
-
 export default ${componentName};`;
 	}
 }
@@ -252,12 +249,9 @@ export function transformSvg(svgCode: string, options: TransformOptions = {}): s
 		processedSvg = processedSvg.replace('<svg', '<svg {...props}');
 	}
 
-	// Indent SVG for proper formatting
-	const svgLines = processedSvg.split('\n');
-	const indentedSvg = svgLines.map((line, index) => {
-		if (index === 0) return '    ' + line.trim();
-		return '    ' + line.trim();
-	}).join('\n');
+	// Indent SVG for proper formatting (remove empty lines)
+	const svgLines = processedSvg.split('\n').filter((line) => line.trim() !== '');
+	const indentedSvg = svgLines.map((line) => '    ' + line.trim()).join('\n');
 
 	// Generate component code using template
 	const componentCode = generateComponentCode(indentedSvg, {
