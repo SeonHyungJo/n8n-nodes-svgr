@@ -16,6 +16,7 @@ A comprehensive guide to all options available in the n8n SVGR node.
 ## Basic Options
 
 ### componentName
+
 - **Type:** `string`
 - **Default:** `SvgComponent`
 - **Description:** Specifies the name of the generated React component.
@@ -27,31 +28,37 @@ export default MyIcon;
 ```
 
 ### icon
+
 - **Type:** `boolean`
 - **Default:** `true`
 - **Description:** Removes `width` and `height` attributes from SVG, allowing size control via CSS.
 
 ### dimensions
+
 - **Type:** `boolean`
 - **Default:** `false`
 - **Description:** Preserves the original SVG's `width` and `height` attributes. Ignored when `icon` is `true`.
 
 ### removeViewBox
+
 - **Type:** `boolean`
 - **Default:** `false`
 - **Description:** Removes the `viewBox` attribute from SVG. Generally, keeping `viewBox` is recommended.
 
 ### svgo
+
 - **Type:** `boolean`
 - **Default:** `true`
 - **Description:** Applies SVGO optimizations. Removes `xmlns`, `style`, and `shape-rendering` attributes.
 
 ### prettier
+
 - **Type:** `boolean`
 - **Default:** `true`
 - **Description:** Formats the generated code with proper indentation.
 
 ### addFillCurrentColor
+
 - **Type:** `boolean`
 - **Default:** `false`
 - **Description:** Adds `fill="currentColor"` to the SVG element. Existing `fill` attributes are removed. This allows controlling icon color via CSS `color` property.
@@ -66,6 +73,7 @@ export default MyIcon;
 ## Code Generation Options
 
 ### typescript
+
 - **Type:** `boolean`
 - **Default:** `false`
 - **Description:** Generates TypeScript code with `SVGProps<SVGSVGElement>` type.
@@ -77,6 +85,7 @@ const SvgComponent = (props: SVGProps<SVGSVGElement>) => { ... }
 ```
 
 ### jsxRuntime
+
 - **Type:** `'classic' | 'automatic'`
 - **Default:** `classic`
 - **Description:** Selects the JSX runtime.
@@ -85,13 +94,14 @@ const SvgComponent = (props: SVGProps<SVGSVGElement>) => { ... }
 
 ```jsx
 // jsxRuntime: 'classic'
-import * as React from "react";
+import * as React from 'react';
 
 // jsxRuntime: 'automatic'
 // (No React import)
 ```
 
 ### exportType
+
 - **Type:** `'default' | 'named'`
 - **Default:** `default`
 - **Description:** Selects the component export method.
@@ -109,19 +119,25 @@ export { SvgComponent };
 ## Component Wrapping Options
 
 ### ref
+
 - **Type:** `boolean`
 - **Default:** `false`
 - **Description:** Wraps the component with `forwardRef` to allow passing a ref to the SVG element.
 
 ```tsx
 // ref: true (TypeScript)
-import { forwardRef, Ref, SVGProps } from "react";
+import { forwardRef, Ref, SVGProps } from 'react';
 const SvgComponent = forwardRef((props: SVGProps<SVGSVGElement>, ref: Ref<SVGSVGElement>) => {
-  return <svg ref={ref} {...props}>...</svg>;
+	return (
+		<svg ref={ref} {...props}>
+			...
+		</svg>
+	);
 });
 ```
 
 ### memo
+
 - **Type:** `boolean`
 - **Default:** `false`
 - **Description:** Wraps the component with `React.memo` to prevent unnecessary re-renders.
@@ -133,6 +149,7 @@ const SvgComponent = memo((props) => { ... });
 ```
 
 ### ref + memo combination
+
 When both options are enabled, the component is generated as `memo(forwardRef(...))`.
 
 ```jsx
@@ -144,6 +161,7 @@ const SvgComponent = memo(forwardRef((props, ref) => { ... }));
 ## Props Options
 
 ### expandProps
+
 - **Type:** `'start' | 'end' | 'none'`
 - **Default:** `end`
 - **Description:** Specifies the position of `{...props}` spread.
@@ -160,6 +178,7 @@ const SvgComponent = memo(forwardRef((props, ref) => { ... }));
 ```
 
 ### svgProps
+
 - **Type:** `{ name: string, value: string }[]`
 - **Description:** Specifies custom attributes to add to the SVG element.
 
@@ -169,6 +188,7 @@ const SvgComponent = memo(forwardRef((props, ref) => { ... }));
 ```
 
 ### replaceAttrValues
+
 - **Type:** `{ from: string, to: string }[]`
 - **Description:** Replaces attribute values within the SVG. Useful for dynamically changing color values.
 
@@ -183,6 +203,7 @@ const SvgComponent = memo(forwardRef((props, ref) => { ... }));
 ## Accessibility Options
 
 ### titleProp
+
 - **Type:** `boolean`
 - **Default:** `false`
 - **Description:** Adds `title` and `titleId` props for improved accessibility. The `aria-labelledby` attribute is automatically added.
@@ -190,24 +211,25 @@ const SvgComponent = memo(forwardRef((props, ref) => { ... }));
 ```tsx
 // titleProp: true (TypeScript)
 interface Props extends SVGProps<SVGSVGElement> {
-  title?: string;
-  titleId?: string;
+	title?: string;
+	titleId?: string;
 }
 
 const SvgComponent = ({ title, titleId, ...props }: Props) => {
-  return (
-    <svg aria-labelledby={titleId} {...props}>
-      {title ? <title id={titleId}>{title}</title> : null}
-      ...
-    </svg>
-  );
+	return (
+		<svg aria-labelledby={titleId} {...props}>
+			{title ? <title id={titleId}>{title}</title> : null}
+			...
+		</svg>
+	);
 };
 
 // Usage
-<SvgComponent title="Home Icon" titleId="home-icon-title" />
+<SvgComponent title="Home Icon" titleId="home-icon-title" />;
 ```
 
 ### descProp
+
 - **Type:** `boolean`
 - **Default:** `false`
 - **Description:** Adds `desc` and `descId` props for improved accessibility. The `aria-describedby` attribute is automatically added.
@@ -215,21 +237,21 @@ const SvgComponent = ({ title, titleId, ...props }: Props) => {
 ```tsx
 // descProp: true (TypeScript)
 interface Props extends SVGProps<SVGSVGElement> {
-  desc?: string;
-  descId?: string;
+	desc?: string;
+	descId?: string;
 }
 
 const SvgComponent = ({ desc, descId, ...props }: Props) => {
-  return (
-    <svg aria-describedby={descId} {...props}>
-      {desc ? <desc id={descId}>{desc}</desc> : null}
-      ...
-    </svg>
-  );
+	return (
+		<svg aria-describedby={descId} {...props}>
+			{desc ? <desc id={descId}>{desc}</desc> : null}
+			...
+		</svg>
+	);
 };
 
 // Usage
-<SvgComponent desc="Home icon that navigates to main page" descId="home-icon-desc" />
+<SvgComponent desc="Home icon that navigates to main page" descId="home-icon-desc" />;
 ```
 
 ---
@@ -237,25 +259,27 @@ const SvgComponent = ({ desc, descId, ...props }: Props) => {
 ## React Native Options
 
 ### native
+
 - **Type:** `boolean`
 - **Default:** `false`
 - **Description:** Generates React Native SVG compatible code using the `react-native-svg` library.
 
 ```jsx
 // native: true
-import { Circle, Path, Svg } from "react-native-svg";
+import { Circle, Path, Svg } from 'react-native-svg';
 
 const SvgComponent = (props) => {
-  return (
-    <Svg {...props}>
-      <Circle cx="12" cy="12" r="10" />
-      <Path d="M0 0 L10 10" />
-    </Svg>
-  );
+	return (
+		<Svg {...props}>
+			<Circle cx="12" cy="12" r="10" />
+			<Path d="M0 0 L10 10" />
+		</Svg>
+	);
 };
 ```
 
 **Supported React Native SVG Components:**
+
 - `Svg`, `Circle`, `Ellipse`, `G`, `Text`, `TSpan`, `TextPath`
 - `Path`, `Polygon`, `Polyline`, `Line`, `Rect`
 - `Use`, `Image`, `Symbol`, `Defs`
@@ -267,15 +291,15 @@ const SvgComponent = (props) => {
 
 ```tsx
 // native: true, typescript: true
-import { Circle, Svg } from "react-native-svg";
-import type { SvgProps } from "react-native-svg";
+import { Circle, Svg } from 'react-native-svg';
+import type { SvgProps } from 'react-native-svg';
 
 const SvgComponent = (props: SvgProps) => {
-  return (
-    <Svg {...props}>
-      <Circle cx="12" cy="12" r="10" />
-    </Svg>
-  );
+	return (
+		<Svg {...props}>
+			<Circle cx="12" cy="12" r="10" />
+		</Svg>
+	);
 };
 ```
 

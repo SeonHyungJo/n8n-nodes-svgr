@@ -4,6 +4,8 @@
  * for n8n Cloud compatibility
  */
 
+import { optimizeSvg, type SvgoOptions } from './svgo';
+
 export interface TransformOptions {
 	icon?: boolean;
 	typescript?: boolean;
@@ -13,6 +15,7 @@ export interface TransformOptions {
 	addFillCurrentColor?: boolean;
 	removeViewBox?: boolean;
 	svgo?: boolean;
+	svgoOptions?: Partial<SvgoOptions>;
 	jsxRuntime?: 'classic' | 'automatic';
 	ref?: boolean;
 	memo?: boolean;
@@ -83,38 +86,10 @@ function htmlToJsx(html: string): string {
 }
 
 /**
- * SVGO-like attribute removal
+ * Remove fill attributes (for addFillCurrentColor option)
  */
-function removeAttributes(svg: string, options: TransformOptions): string {
-	let result = svg;
-
-	// Remove xmlns
-	result = result.replace(/\s+xmlns="[^"]*"/g, '');
-
-	// Remove style attribute
-	result = result.replace(/\s+style="[^"]*"/g, '');
-
-	// Remove shape-rendering (will be converted to shapeRendering but we remove it)
-	result = result.replace(/\s+shape-rendering="[^"]*"/g, '');
-	result = result.replace(/\s+shapeRendering="[^"]*"/g, '');
-
-	// Remove width and height (icon mode)
-	if (options.icon || !options.dimensions) {
-		result = result.replace(/\s+width="[^"]*"/g, '');
-		result = result.replace(/\s+height="[^"]*"/g, '');
-	}
-
-	// Remove fill attribute if addFillCurrentColor is true (we'll add it back later)
-	if (options.addFillCurrentColor) {
-		result = result.replace(/\s+fill="[^"]*"/g, '');
-	}
-
-	// Remove viewBox if requested
-	if (options.removeViewBox) {
-		result = result.replace(/\s+viewBox="[^"]*"/g, '');
-	}
-
-	return result;
+function removeFillAttributes(svg: string): string {
+	return svg.replace(/\s+fill="[^"]*"/g, '');
 }
 
 /**
@@ -547,6 +522,7 @@ export function transformSvg(svgCode: string, options: TransformOptions = {}): s
 		addFillCurrentColor = false,
 		removeViewBox = false,
 		svgo = true,
+		svgoOptions = {},
 		jsxRuntime = 'classic',
 		ref = false,
 		memo = false,
@@ -562,19 +538,36 @@ export function transformSvg(svgCode: string, options: TransformOptions = {}): s
 	// Clean and process SVG
 	let processedSvg = svgCode.trim();
 
-	// Remove XML declaration if present
-	processedSvg = processedSvg.replace(/<\?xml[^?]*\?>\s*/g, '');
-
-	// Remove comments
-	processedSvg = processedSvg.replace(/<!--[\s\S]*?-->/g, '');
-
-	// Apply SVGO-like transformations
+	// Apply SVGO optimizations
 	if (svgo) {
-		processedSvg = removeAttributes(processedSvg, {
-			icon,
-			dimensions,
-			addFillCurrentColor,
-			removeViewBox,
+		processedSvg = optimizeSvg(processedSvg, {
+			// 기본 활성화
+			removeDoctype: true,
+			removeXMLProcInst: true,
+			removeComments: true,
+			removeMetadata: true,
+			removeEditorsNSData: true,
+			removeUnusedNS: true,
+			removeStyleAttr: true,
+			removeShapeRendering: true,
+
+			// 기본 비활성화 (기존 동작 유지)
+			cleanupAttrs: false,
+			removeEmptyAttrs: false,
+			removeHiddenElems: false,
+			removeEmptyContainers: false,
+			removeEmptyText: false,
+			convertColors: false,
+			minifyStyles: false,
+			cleanupNumericValues: false,
+			collapseGroups: false,
+
+			// 조건부 옵션
+			removeDimensions: icon || !dimensions,
+			removeViewBox: removeViewBox,
+
+			// 사용자 정의 옵션 병합
+			...svgoOptions,
 		});
 	}
 
@@ -585,6 +578,7 @@ export function transformSvg(svgCode: string, options: TransformOptions = {}): s
 
 	// Add fill="currentColor" if requested
 	if (addFillCurrentColor) {
+		processedSvg = removeFillAttributes(processedSvg);
 		processedSvg = addFillAttribute(processedSvg);
 	}
 
