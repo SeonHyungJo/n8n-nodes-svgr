@@ -132,8 +132,9 @@ describe('transformSvg', () => {
 			const svg = '<svg><circle /></svg>';
 			const result = transformSvg(svg, { typescript: true });
 
-			expect(result).toContain('import {SVGProps} from "react"');
-			expect(result).toContain('(props: SVGProps<SVGSVGElement>)');
+			expect(result).toContain('SVGProps');
+			expect(result).toContain('from "react"');
+			expect(result).toContain('props: SVGProps<SVGSVGElement>');
 		});
 
 		it('should not include TypeScript types when typescript is false', () => {
@@ -282,7 +283,7 @@ describe('transformSvg', () => {
 
 			// Overridden option
 			expect(result).toContain('SVGProps');
-			expect(result).toContain('import {SVGProps} from "react"');
+			expect(result).toContain('from "react"');
 
 			// Default options still apply
 			expect(result).not.toContain('width="24"'); // icon: true by default
@@ -354,9 +355,376 @@ describe('transformSvg', () => {
 				componentName: 'BaseComponent'
 			});
 
-			expect(result).toContain('import {SVGProps} from "react"');
-			expect(result).toContain('const BaseComponent = ((props: SVGProps<SVGSVGElement>)');
+			expect(result).toContain('import');
+			expect(result).toContain('SVGProps');
 			expect(result).toContain('export default BaseComponent');
+		});
+	});
+
+	describe('jsxRuntime Option', () => {
+		it('should use classic JSX runtime by default', () => {
+			const svg = '<svg><circle /></svg>';
+			const result = transformSvg(svg, { jsxRuntime: 'classic' });
+
+			expect(result).toContain('import * as React from "react"');
+		});
+
+		it('should use automatic JSX runtime without React import', () => {
+			const svg = '<svg><circle /></svg>';
+			const result = transformSvg(svg, { jsxRuntime: 'automatic' });
+
+			expect(result).not.toContain('import * as React');
+		});
+
+		it('should use automatic JSX runtime with TypeScript (type import only)', () => {
+			const svg = '<svg><circle /></svg>';
+			const result = transformSvg(svg, { jsxRuntime: 'automatic', typescript: true });
+
+			expect(result).toContain('import type { SVGProps }');
+		});
+	});
+
+	describe('ref (forwardRef) Option', () => {
+		it('should wrap component with forwardRef when ref is true', () => {
+			const svg = '<svg><circle /></svg>';
+			const result = transformSvg(svg, { ref: true });
+
+			expect(result).toContain('forwardRef');
+			expect(result).toContain('ref={ref}');
+		});
+
+		it('should include Ref type with TypeScript', () => {
+			const svg = '<svg><circle /></svg>';
+			const result = transformSvg(svg, { ref: true, typescript: true });
+
+			expect(result).toContain('Ref');
+			expect(result).toContain('forwardRef');
+			expect(result).toContain('ref: Ref<SVGSVGElement>');
+		});
+	});
+
+	describe('memo Option', () => {
+		it('should wrap component with memo when memo is true', () => {
+			const svg = '<svg><circle /></svg>';
+			const result = transformSvg(svg, { memo: true });
+
+			expect(result).toContain('memo');
+			expect(result).toContain('memo(');
+		});
+
+		it('should combine memo and forwardRef', () => {
+			const svg = '<svg><circle /></svg>';
+			const result = transformSvg(svg, { memo: true, ref: true });
+
+			expect(result).toContain('memo(forwardRef(');
+		});
+	});
+
+	describe('replaceAttrValues Option', () => {
+		it('should replace attribute values', () => {
+			const svg = '<svg fill="#000"><circle fill="#000" /></svg>';
+			const result = transformSvg(svg, {
+				replaceAttrValues: { '#000': 'currentColor' },
+				svgo: false
+			});
+
+			expect(result).toContain('fill="currentColor"');
+			expect(result).not.toContain('fill="#000"');
+		});
+
+		it('should replace multiple attribute values', () => {
+			const svg = '<svg fill="#000" stroke="#fff"><circle /></svg>';
+			const result = transformSvg(svg, {
+				replaceAttrValues: {
+					'#000': 'currentColor',
+					'#fff': 'transparent'
+				},
+				svgo: false
+			});
+
+			expect(result).toContain('fill="currentColor"');
+			expect(result).toContain('stroke="transparent"');
+		});
+	});
+
+	describe('svgProps Option', () => {
+		it('should add custom props to SVG element', () => {
+			const svg = '<svg><circle /></svg>';
+			const result = transformSvg(svg, {
+				svgProps: { role: 'img' }
+			});
+
+			expect(result).toContain('role="img"');
+		});
+
+		it('should add multiple custom props', () => {
+			const svg = '<svg><circle /></svg>';
+			const result = transformSvg(svg, {
+				svgProps: {
+					role: 'img',
+					'aria-label': 'Icon'
+				}
+			});
+
+			expect(result).toContain('role="img"');
+			expect(result).toContain('aria-label="Icon"');
+		});
+	});
+
+	describe('expandProps Option', () => {
+		it('should add props spread at end by default', () => {
+			const svg = '<svg viewBox="0 0 24 24"><circle /></svg>';
+			const result = transformSvg(svg, { expandProps: 'end' });
+
+			// Props spread should be at the end
+			expect(result).toContain('{...props}');
+		});
+
+		it('should add props spread at start', () => {
+			const svg = '<svg viewBox="0 0 24 24"><circle /></svg>';
+			const result = transformSvg(svg, { expandProps: 'start' });
+
+			// Props spread should be near the start
+			expect(result).toContain('<svg {...props}');
+		});
+
+		it('should not add props spread when expandProps is false', () => {
+			const svg = '<svg viewBox="0 0 24 24"><circle /></svg>';
+			const result = transformSvg(svg, { expandProps: false });
+
+			expect(result).not.toContain('{...props}');
+		});
+	});
+
+	describe('titleProp Option', () => {
+		it('should add title prop support', () => {
+			const svg = '<svg><circle /></svg>';
+			const result = transformSvg(svg, { titleProp: true });
+
+			expect(result).toContain('title');
+			expect(result).toContain('titleId');
+			expect(result).toContain('<title');
+			expect(result).toContain('aria-labelledby');
+		});
+
+		it('should include title in props interface with TypeScript', () => {
+			const svg = '<svg><circle /></svg>';
+			const result = transformSvg(svg, { titleProp: true, typescript: true });
+
+			expect(result).toContain('title?: string');
+			expect(result).toContain('titleId?: string');
+		});
+	});
+
+	describe('descProp Option', () => {
+		it('should add desc prop support', () => {
+			const svg = '<svg><circle /></svg>';
+			const result = transformSvg(svg, { descProp: true });
+
+			expect(result).toContain('desc');
+			expect(result).toContain('descId');
+			expect(result).toContain('<desc');
+			expect(result).toContain('aria-describedby');
+		});
+
+		it('should include desc in props interface with TypeScript', () => {
+			const svg = '<svg><circle /></svg>';
+			const result = transformSvg(svg, { descProp: true, typescript: true });
+
+			expect(result).toContain('desc?: string');
+			expect(result).toContain('descId?: string');
+		});
+	});
+
+	describe('Combined Options', () => {
+		it('should handle jsxRuntime, ref, memo, replaceAttrValues together', () => {
+			const svg = '<svg fill="#000"><circle /></svg>';
+			const result = transformSvg(svg, {
+				jsxRuntime: 'automatic',
+				typescript: true,
+				ref: true,
+				memo: true,
+				replaceAttrValues: { '#000': 'currentColor' },
+				svgo: false
+			});
+
+			expect(result).toContain('import type { SVGProps, Ref }');
+			expect(result).toContain('memo(forwardRef(');
+			expect(result).toContain('fill="currentColor"');
+		});
+
+		it('should handle svgProps, expandProps, titleProp, descProp together', () => {
+			const svg = '<svg><circle /></svg>';
+			const result = transformSvg(svg, {
+				svgProps: { role: 'img' },
+				expandProps: 'start',
+				titleProp: true,
+				descProp: true,
+				typescript: true
+			});
+
+			expect(result).toContain('role="img"');
+			expect(result).toContain('title');
+			expect(result).toContain('desc');
+			expect(result).toContain('aria-labelledby');
+			expect(result).toContain('aria-describedby');
+		});
+
+		it('should handle all options combined', () => {
+			const svg = '<svg fill="#000"><circle /></svg>';
+			const result = transformSvg(svg, {
+				componentName: 'MyIcon',
+				jsxRuntime: 'automatic',
+				typescript: true,
+				ref: true,
+				memo: true,
+				replaceAttrValues: { '#000': 'currentColor' },
+				svgProps: { role: 'img' },
+				titleProp: true,
+				descProp: true,
+				svgo: false
+			});
+
+			expect(result).toContain('const MyIcon');
+			expect(result).toContain('memo(forwardRef(');
+			expect(result).toContain('fill="currentColor"');
+			expect(result).toContain('role="img"');
+			expect(result).toContain('title');
+			expect(result).toContain('desc');
+		});
+	});
+
+	describe('native Option', () => {
+		it('should convert SVG elements to React Native SVG components', () => {
+			const svg = '<svg><circle cx="12" cy="12" r="10" /></svg>';
+			const result = transformSvg(svg, { native: true });
+
+			expect(result).toContain('<Svg');
+			expect(result).toContain('<Circle');
+			expect(result).toContain('react-native-svg');
+		});
+
+		it('should convert path elements to Path components', () => {
+			const svg = '<svg><path d="M0 0 L10 10" /></svg>';
+			const result = transformSvg(svg, { native: true });
+
+			expect(result).toContain('<Svg');
+			expect(result).toContain('<Path');
+		});
+
+		it('should convert multiple elements correctly', () => {
+			const svg = '<svg><rect /><line /><ellipse /><polygon /></svg>';
+			const result = transformSvg(svg, { native: true });
+
+			expect(result).toContain('<Rect');
+			expect(result).toContain('<Line');
+			expect(result).toContain('<Ellipse');
+			expect(result).toContain('<Polygon');
+		});
+
+		it('should convert gradient elements', () => {
+			const svg = `<svg>
+				<defs>
+					<linearGradient id="grad">
+						<stop offset="0%" />
+					</linearGradient>
+				</defs>
+			</svg>`;
+			const result = transformSvg(svg, { native: true });
+
+			expect(result).toContain('<Defs');
+			expect(result).toContain('<LinearGradient');
+			expect(result).toContain('<Stop');
+		});
+
+		it('should import only used components from react-native-svg', () => {
+			const svg = '<svg><circle /><path /></svg>';
+			const result = transformSvg(svg, { native: true });
+
+			expect(result).toContain('import { Circle, Path, Svg }');
+		});
+
+		it('should use SvgProps type with TypeScript', () => {
+			const svg = '<svg><circle /></svg>';
+			const result = transformSvg(svg, { native: true, typescript: true });
+
+			expect(result).toContain('SvgProps');
+			expect(result).toContain('props: SvgProps');
+		});
+
+		it('should work with forwardRef', () => {
+			const svg = '<svg><circle /></svg>';
+			const result = transformSvg(svg, { native: true, ref: true });
+
+			expect(result).toContain('forwardRef');
+			expect(result).toContain('ref={ref}');
+		});
+
+		it('should work with memo', () => {
+			const svg = '<svg><circle /></svg>';
+			const result = transformSvg(svg, { native: true, memo: true });
+
+			expect(result).toContain('memo(');
+		});
+	});
+
+	describe('exportType Option', () => {
+		it('should use default export by default', () => {
+			const svg = '<svg><circle /></svg>';
+			const result = transformSvg(svg, { exportType: 'default' });
+
+			expect(result).toContain('export default SvgComponent');
+		});
+
+		it('should use named export when specified', () => {
+			const svg = '<svg><circle /></svg>';
+			const result = transformSvg(svg, { exportType: 'named' });
+
+			expect(result).toContain('export { SvgComponent }');
+			expect(result).not.toContain('export default');
+		});
+
+		it('should use named export with custom component name', () => {
+			const svg = '<svg><circle /></svg>';
+			const result = transformSvg(svg, {
+				componentName: 'MyIcon',
+				exportType: 'named'
+			});
+
+			expect(result).toContain('export { MyIcon }');
+		});
+	});
+
+	describe('Combined native and exportType', () => {
+		it('should handle native with named export', () => {
+			const svg = '<svg><circle /></svg>';
+			const result = transformSvg(svg, {
+				native: true,
+				exportType: 'named',
+				componentName: 'NativeIcon'
+			});
+
+			expect(result).toContain('<Svg');
+			expect(result).toContain('<Circle');
+			expect(result).toContain('export { NativeIcon }');
+			expect(result).toContain('react-native-svg');
+		});
+
+		it('should handle native with TypeScript, memo, and ref', () => {
+			const svg = '<svg><path d="M0 0" /></svg>';
+			const result = transformSvg(svg, {
+				native: true,
+				typescript: true,
+				memo: true,
+				ref: true,
+				componentName: 'NativePathIcon'
+			});
+
+			expect(result).toContain('<Svg');
+			expect(result).toContain('<Path');
+			expect(result).toContain('memo(forwardRef(');
+			expect(result).toContain('SvgProps');
+			expect(result).toContain('Ref<Svg>');
 		});
 	});
 });

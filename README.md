@@ -13,11 +13,18 @@ This node has **no external dependencies** and is fully compatible with both:
 ## Features
 
 - Transform SVG code into React components
-- Customizable options:
-  - **Icon Mode**: Replace width/height with `1em` for scalable icons
-  - **TypeScript**: Generate TypeScript-compatible code
-  - **Prettier**: Format output with Prettier
-  - **Dimensions**: Keep or remove original width/height attributes
+- **Basic Options**: icon, dimensions, svgo, prettier, removeViewBox, addFillCurrentColor
+- **Code Generation**: typescript, jsxRuntime (classic/automatic), exportType (default/named)
+- **Component Wrapping**: ref (forwardRef), memo (React.memo)
+- **Props Control**: expandProps, svgProps, replaceAttrValues
+- **Accessibility**: titleProp, descProp (aria-labelledby, aria-describedby)
+- **React Native**: native mode with react-native-svg support
+
+## Documentation
+
+- [Options Guide (English)](docs/OPTIONS_EN.md)
+- [옵션 가이드 (한국어)](docs/OPTIONS_KO.md)
+- [Development Roadmap](docs/TODO.md)
 
 ## Installation
 
@@ -60,12 +67,21 @@ Or install through the n8n UI:
 
 1. Add the **SVGR** node to your workflow
 2. Enter your SVG code in the **SVG Code** field
-3. Configure options as needed:
-   - **Icon**: Enable for icon-style components (default: `true`)
-   - **TypeScript**: Generate TypeScript code (default: `false`)
-   - **Prettier**: Format with Prettier (default: `true`)
-   - **Dimensions**: Keep original dimensions (default: `false`)
-4. Execute the node to get the transformed React component
+3. Set the **Component Name** (default: `SvgComponent`)
+4. Configure options as needed (see [Options Guide](docs/OPTIONS_EN.md) for details)
+5. Execute the node to get the transformed React component
+
+### Quick Options Reference
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| icon | `true` | Remove width/height for scalable icons |
+| typescript | `false` | Generate TypeScript code |
+| jsxRuntime | `classic` | JSX runtime (`classic` or `automatic`) |
+| ref | `false` | Wrap with forwardRef |
+| memo | `false` | Wrap with React.memo |
+| native | `false` | Generate React Native SVG code |
+| exportType | `default` | Export type (`default` or `named`) |
 
 ### Example
 

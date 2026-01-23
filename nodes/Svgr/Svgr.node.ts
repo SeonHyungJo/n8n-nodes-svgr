@@ -57,11 +57,61 @@ export class Svgr implements INodeType {
 						description: 'Whether to add fill="currentColor" to the SVG element (removes existing fill attributes)',
 					},
 					{
+						displayName: 'Desc Prop',
+						name: 'descProp',
+						type: 'boolean',
+						default: false,
+						description: 'Whether to add desc and descId props for accessibility (adds aria-describedby)',
+					},
+					{
 						displayName: 'Dimensions',
 						name: 'dimensions',
 						type: 'boolean',
 						default: false,
 						description: 'Whether to keep width and height attributes from the original SVG',
+					},
+					{
+						displayName: 'Expand Props',
+						name: 'expandProps',
+						type: 'options',
+						options: [
+							{
+								name: 'End (Default)',
+								value: 'end',
+								description: 'Add {...props} at the end of SVG attributes',
+							},
+							{
+								name: 'Start',
+								value: 'start',
+								description: 'Add {...props} at the start of SVG attributes',
+							},
+							{
+								name: 'None',
+								value: 'none',
+								description: 'Do not add props spread',
+							},
+						],
+						default: 'end',
+						description: 'Where to expand props on the SVG element',
+					},
+					{
+						displayName: 'Export Type',
+						name: 'exportType',
+						type: 'options',
+						options: [
+							{
+								name: 'Default Export',
+								value: 'default',
+								description: 'Use export default Component',
+							},
+							{
+								name: 'Named Export',
+								value: 'named',
+								description: 'Use export { Component }',
+							},
+						],
+						default: 'default',
+						description: 'How to export the generated component',
 					},
 					{
 						displayName: 'Icon',
@@ -72,11 +122,51 @@ export class Svgr implements INodeType {
 							'Whether to remove width and height attributes for scalable icons',
 					},
 					{
+						displayName: 'JSX Runtime',
+						name: 'jsxRuntime',
+						type: 'options',
+						options: [
+							{
+								name: 'Classic',
+								value: 'classic',
+								description: 'Use classic JSX runtime (requires React import)',
+							},
+							{
+								name: 'Automatic',
+								value: 'automatic',
+								description: 'Use automatic JSX runtime (React 17+, minimal imports)',
+							},
+						],
+						default: 'classic',
+						description: 'Which JSX runtime to use for the generated component',
+					},
+					{
+						displayName: 'Memo',
+						name: 'memo',
+						type: 'boolean',
+						default: false,
+						description: 'Whether to wrap the component with React.memo for performance optimization',
+					},
+					{
+						displayName: 'Native (React Native)',
+						name: 'native',
+						type: 'boolean',
+						default: false,
+						description: 'Whether to generate React Native SVG compatible code using react-native-svg',
+					},
+					{
 						displayName: 'Prettier',
 						name: 'prettier',
 						type: 'boolean',
 						default: true,
 						description: 'Whether to format the output code',
+					},
+					{
+						displayName: 'Ref (ForwardRef)',
+						name: 'ref',
+						type: 'boolean',
+						default: false,
+						description: 'Whether to forward ref to the SVG element using forwardRef',
 					},
 					{
 						displayName: 'Remove View Box',
@@ -93,6 +183,13 @@ export class Svgr implements INodeType {
 						description: 'Whether to apply SVGO optimizations (removes xmlns, style, shape-rendering attributes)',
 					},
 					{
+						displayName: 'Title Prop',
+						name: 'titleProp',
+						type: 'boolean',
+						default: false,
+						description: 'Whether to add title and titleId props for accessibility (adds aria-labelledby)',
+					},
+					{
 						displayName: 'TypeScript',
 						name: 'typescript',
 						type: 'boolean',
@@ -100,6 +197,76 @@ export class Svgr implements INodeType {
 						description: 'Whether to generate TypeScript code with SVGProps type',
 					},
 				],
+			},
+			{
+				displayName: 'Replace Attribute Values',
+				name: 'replaceAttrValues',
+				type: 'fixedCollection',
+				typeOptions: {
+					multipleValues: true,
+				},
+				placeholder: 'Add Replacement',
+				default: {},
+				options: [
+					{
+						name: 'replacements',
+						displayName: 'Replacements',
+						values: [
+							{
+								displayName: 'From',
+								name: 'from',
+								type: 'string',
+								default: '',
+								placeholder: '#000',
+								description: 'The attribute value to replace',
+							},
+							{
+								displayName: 'To',
+								name: 'to',
+								type: 'string',
+								default: '',
+								placeholder: 'currentColor',
+								description: 'The new value to use',
+							},
+						],
+					},
+				],
+				description: 'Replace attribute values in the SVG (e.g., #000 → currentColor)',
+			},
+			{
+				displayName: 'SVG Props',
+				name: 'svgProps',
+				type: 'fixedCollection',
+				typeOptions: {
+					multipleValues: true,
+				},
+				placeholder: 'Add SVG Prop',
+				default: {},
+				options: [
+					{
+						name: 'props',
+						displayName: 'Props',
+						values: [
+							{
+								displayName: 'Name',
+								name: 'name',
+								type: 'string',
+								default: '',
+								placeholder: 'role',
+								description: 'The prop name to add',
+							},
+							{
+								displayName: 'Value',
+								name: 'value',
+								type: 'string',
+								default: '',
+								placeholder: 'img',
+								description: 'The prop value',
+							},
+						],
+					},
+				],
+				description: 'Add custom props to the SVG element (e.g., role="img", aria-label)',
 			},
 		],
 	};
@@ -130,7 +297,46 @@ export class Svgr implements INodeType {
 					addFillCurrentColor?: boolean;
 					svgo?: boolean;
 					removeViewBox?: boolean;
+					jsxRuntime?: 'classic' | 'automatic';
+					ref?: boolean;
+					memo?: boolean;
+					expandProps?: 'start' | 'end' | 'none';
+					titleProp?: boolean;
+					descProp?: boolean;
+					native?: boolean;
+					exportType?: 'default' | 'named';
 				};
+
+				const replaceAttrValuesRaw = this.getNodeParameter('replaceAttrValues', itemIndex, {}) as {
+					replacements?: Array<{ from: string; to: string }>;
+				};
+
+				const svgPropsRaw = this.getNodeParameter('svgProps', itemIndex, {}) as {
+					props?: Array<{ name: string; value: string }>;
+				};
+
+				// Convert replaceAttrValues array to object
+				const replaceAttrValues: Record<string, string> = {};
+				if (replaceAttrValuesRaw.replacements) {
+					for (const replacement of replaceAttrValuesRaw.replacements) {
+						if (replacement.from && replacement.to) {
+							replaceAttrValues[replacement.from] = replacement.to;
+						}
+					}
+				}
+
+				// Convert svgProps array to object
+				const svgProps: Record<string, string> = {};
+				if (svgPropsRaw.props) {
+					for (const prop of svgPropsRaw.props) {
+						if (prop.name && prop.value) {
+							svgProps[prop.name] = prop.value;
+						}
+					}
+				}
+
+				// Handle expandProps conversion (none -> false)
+				const expandProps: 'start' | 'end' | false = options.expandProps === 'none' ? false : (options.expandProps || 'end');
 
 				const transformOptions = {
 					componentName,
@@ -141,6 +347,16 @@ export class Svgr implements INodeType {
 					addFillCurrentColor: options.addFillCurrentColor !== undefined ? options.addFillCurrentColor : false,
 					svgo: options.svgo !== undefined ? options.svgo : true,
 					removeViewBox: options.removeViewBox !== undefined ? options.removeViewBox : false,
+					jsxRuntime: options.jsxRuntime || 'classic',
+					ref: options.ref !== undefined ? options.ref : false,
+					memo: options.memo !== undefined ? options.memo : false,
+					replaceAttrValues: Object.keys(replaceAttrValues).length > 0 ? replaceAttrValues : undefined,
+					svgProps: Object.keys(svgProps).length > 0 ? svgProps : undefined,
+					expandProps,
+					titleProp: options.titleProp !== undefined ? options.titleProp : false,
+					descProp: options.descProp !== undefined ? options.descProp : false,
+					native: options.native !== undefined ? options.native : false,
+					exportType: options.exportType || 'default',
 				};
 
 				const reactCode = transformSvg(svgCode, transformOptions);
