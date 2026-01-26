@@ -11,7 +11,7 @@ export class Svgr implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'SVGR',
 		name: 'svgr',
-		icon: { light: 'file:../../icons/svgr.svg', dark: 'file:../../icons/svgr.dark.svg' },
+		icon: { light: 'file:svgr.svg', dark: 'file:svgr.dark.svg' },
 		group: ['transform'],
 		version: 1,
 		description: 'Transform SVG into React components using SVGR',
