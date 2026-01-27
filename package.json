@@ -1,6 +1,6 @@
 {
 	"name": "n8n-nodes-svgr",
-	"version": "0.2.3",
+	"version": "0.2.4",
 	"description": "SVGR integration for n8n nodes",
 	"license": "MIT",
 	"homepage": "",
