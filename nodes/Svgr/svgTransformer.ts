@@ -56,6 +56,7 @@ function htmlToJsx(html: string): string {
 		'alignment-baseline': 'alignmentBaseline',
 		'stop-color': 'stopColor',
 		'stop-opacity': 'stopOpacity',
+		'xmlns:xlink': 'xmlnsXlink',
 		'xlink:href': 'xlinkHref',
 		'shape-rendering': 'shapeRendering',
 	};
